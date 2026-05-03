@@ -142,20 +142,48 @@ function Lib.new()
         return b
     end
 
-    -- Minimize: tween height down to topbar only
-    local minimized = false
-    local TI_Q = TweenInfo.new(0.25, Enum.EasingStyle.Quart, Enum.EasingDirection.Out)
+    -- Size constants
+    local NRM_CTN = UDim2.new(0,988,0,668)
+    local NRM_WIN = UDim2.new(0,980,0,660)
+    local MINI_CTN = UDim2.new(0,988,0,60)
+    local MINI_WIN = UDim2.new(0,980,0,52)
+    local TI_Q = TweenInfo.new(0.22,Enum.EasingStyle.Quart,Enum.EasingDirection.Out)
+    local TI_B = TweenInfo.new(0.28,Enum.EasingStyle.Back, Enum.EasingDirection.Out)
+    local minimized  = false
+    local fullscreen = false
+
+    -- Minimize: collapse to topbar only
     IBtn(C.WB,"rbxassetid://7072706620",1).MouseButton1Click:Connect(function()
+        if fullscreen then return end
         minimized = not minimized
-        local ch = minimized and 60 or 668
-        local wh = minimized and 52 or 660
-        TS:Create(ctn, TI_Q, {Size=UDim2.new(0,988,0,ch)}):Play()
-        TS:Create(win, TI_Q, {Size=UDim2.new(0,980,0,wh)}):Play()
+        if minimized then
+            TS:Create(ctn, TI_Q, {Size=MINI_CTN}):Play()
+            TS:Create(win, TI_Q, {Size=MINI_WIN}):Play()
+        else
+            TS:Create(ctn, TI_Q, {Size=NRM_CTN}):Play()
+            TS:Create(win, TI_Q, {Size=NRM_WIN}):Play()
+        end
     end)
-    IBtn(C.WB,"rbxassetid://10734943193",2)
+
+    -- Fullscreen: fill viewport
+    IBtn(C.WB,"rbxassetid://10734943193",2).MouseButton1Click:Connect(function()
+        if minimized then return end
+        fullscreen = not fullscreen
+        if fullscreen then
+            local vp = workspace.CurrentCamera.ViewportSize
+            TS:Create(ctn, TI_Q, {Size=UDim2.new(0,vp.X+24,0,vp.Y+24), Position=UDim2.new(0,-12,0,-12)}):Play()
+            TS:Create(win, TI_Q, {Size=UDim2.new(0,vp.X-8, 0,vp.Y-8)}):Play()
+        else
+            TS:Create(ctn, TI_Q, {Size=NRM_CTN, Position=UDim2.new(0.5,-494,0.5,-334)}):Play()
+            TS:Create(win, TI_Q, {Size=NRM_WIN}):Play()
+        end
+    end)
+
+    -- Close: shrink + destroy
     IBtn(C.Cls,"rbxassetid://10747384394",3).MouseButton1Click:Connect(function()
-        TS:Create(ctn,TweenInfo.new(0.16,Enum.EasingStyle.Quart),{Size=UDim2.new(0,988*0.93,0,668*0.93)}):Play()
-        task.delay(0.15, function() gui:Destroy() end)
+        TS:Create(ctn, TweenInfo.new(0.16,Enum.EasingStyle.Quart,Enum.EasingDirection.In),
+            {Size=UDim2.new(0,988*0.88,0,668*0.88)}):Play()
+        task.delay(0.14, function() gui:Destroy() end)
     end)
 
     -- Drag
@@ -290,25 +318,25 @@ function Lib.new()
         end
     end)
 
-    -- RightShift: toggle visibility with scale-bounce animation
+    -- RightShift: hide/show with bounce, respects minimized state
     local _open = true
     UIS.InputBegan:Connect(function(i, gp)
         if gp then return end
-        if i.KeyCode == Enum.KeyCode.RightShift then
-            _open = not _open
-            if _open then
-                ctn.Visible = true
-                ctn.Size = UDim2.new(0, 988*0.90, 0, 668*0.90)
-                TS:Create(ctn, TweenInfo.new(0.24, Enum.EasingStyle.Back, Enum.EasingDirection.Out),
-                    {Size=UDim2.new(0,988,0,668)}):Play()
-            else
-                TS:Create(ctn, TweenInfo.new(0.18, Enum.EasingStyle.Quart, Enum.EasingDirection.In),
-                    {Size=UDim2.new(0,988*0.90,0,668*0.90)}):Play()
-                task.delay(0.17, function()
-                    ctn.Visible = false
-                    ctn.Size = UDim2.new(0,988,0,668)
-                end)
-            end
+        if i.KeyCode ~= Enum.KeyCode.RightShift then return end
+        _open = not _open
+        if _open then
+            local tSz = minimized and MINI_CTN or NRM_CTN
+            ctn.Size = UDim2.new(0, tSz.X.Offset*0.88, 0, tSz.Y.Offset*0.88)
+            ctn.Visible = true
+            TS:Create(ctn, TI_B, {Size=tSz}):Play()
+        else
+            local tSz = ctn.Size
+            TS:Create(ctn, TweenInfo.new(0.16,Enum.EasingStyle.Quart,Enum.EasingDirection.In),
+                {Size=UDim2.new(0,tSz.X.Offset*0.88,0,tSz.Y.Offset*0.88)}):Play()
+            task.delay(0.15, function()
+                ctn.Visible = false
+                ctn.Size = minimized and MINI_CTN or NRM_CTN
+            end)
         end
     end)
 
