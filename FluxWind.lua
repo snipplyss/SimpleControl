@@ -3,7 +3,7 @@
 
 local FluxWind = {}
 FluxWind.__index = FluxWind
-FluxWind.Version = "1.0.0"
+FluxWind.Version = "1.1.0"
 
 local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
@@ -51,6 +51,91 @@ local Themes = {
 		Danger = Color3.fromRGB(255, 79, 105),
 		Shadow = Color3.fromRGB(0, 0, 0),
 	},
+	Obsidian = {
+		Background = Color3.fromRGB(9, 10, 13),
+		Surface = Color3.fromRGB(16, 18, 24),
+		Surface2 = Color3.fromRGB(23, 26, 35),
+		Surface3 = Color3.fromRGB(33, 38, 50),
+		Stroke = Color3.fromRGB(66, 75, 98),
+		Text = Color3.fromRGB(246, 248, 255),
+		Muted = Color3.fromRGB(146, 156, 184),
+		Accent = Color3.fromRGB(96, 165, 250),
+		Accent2 = Color3.fromRGB(52, 211, 153),
+		Danger = Color3.fromRGB(251, 113, 133),
+		Shadow = Color3.fromRGB(0, 0, 0),
+	},
+	Emerald = {
+		Background = Color3.fromRGB(7, 14, 13),
+		Surface = Color3.fromRGB(13, 24, 23),
+		Surface2 = Color3.fromRGB(19, 35, 33),
+		Surface3 = Color3.fromRGB(28, 50, 47),
+		Stroke = Color3.fromRGB(48, 89, 83),
+		Text = Color3.fromRGB(236, 255, 250),
+		Muted = Color3.fromRGB(134, 177, 166),
+		Accent = Color3.fromRGB(45, 212, 191),
+		Accent2 = Color3.fromRGB(163, 230, 53),
+		Danger = Color3.fromRGB(251, 113, 133),
+		Shadow = Color3.fromRGB(0, 0, 0),
+	},
+	Amethyst = {
+		Background = Color3.fromRGB(13, 10, 18),
+		Surface = Color3.fromRGB(22, 17, 31),
+		Surface2 = Color3.fromRGB(32, 24, 45),
+		Surface3 = Color3.fromRGB(46, 34, 66),
+		Stroke = Color3.fromRGB(82, 65, 111),
+		Text = Color3.fromRGB(249, 244, 255),
+		Muted = Color3.fromRGB(170, 148, 197),
+		Accent = Color3.fromRGB(168, 85, 247),
+		Accent2 = Color3.fromRGB(244, 114, 182),
+		Danger = Color3.fromRGB(251, 113, 133),
+		Shadow = Color3.fromRGB(0, 0, 0),
+	},
+}
+
+local FontAliases = {
+	Builder = "rbxasset://fonts/families/BuilderSans.json",
+	BuilderSans = "rbxasset://fonts/families/BuilderSans.json",
+	Gotham = "rbxasset://fonts/families/GothamSSm.json",
+	GothamSSm = "rbxasset://fonts/families/GothamSSm.json",
+	Arial = "rbxasset://fonts/families/Arial.json",
+}
+
+local DefaultStyle = {
+	Font = "BuilderSans",
+	Radius = 14,
+	Transparency = 0.04,
+	Acrylic = true,
+	Animations = true,
+}
+
+local BuiltInIcons = {
+	aim = "⌖",
+	bell = "!",
+	box = "□",
+	brush = "✎",
+	check = "✓",
+	close = "×",
+	code = "</>",
+	combat = "◆",
+	config = "⌘",
+	eye = "◇",
+	home = "⌂",
+	info = "i",
+	key = "⌁",
+	main = "✦",
+	menu = "☰",
+	player = "◉",
+	search = "⌕",
+	settings = "⚙",
+	slider = "≡",
+	spark = "✦",
+	speed = "»",
+	star = "★",
+	target = "◎",
+	toggle = "●",
+	user = "◌",
+	visuals = "◇",
+	warning = "!",
 }
 
 local function getParent()
@@ -86,6 +171,140 @@ local function create(className, props, children)
 	end
 
 	return object
+end
+
+local function copyDictionary(source)
+	local result = {}
+	for key, value in pairs(source or {}) do
+		result[key] = value
+	end
+	return result
+end
+
+local function resolveTheme(themeConfig, accent)
+	local base
+	if typeof(themeConfig) == "table" then
+		base = copyDictionary(Themes.Dark)
+		for key, value in pairs(themeConfig) do
+			base[key] = value
+		end
+	else
+		base = copyDictionary(Themes[themeConfig or "Dark"] or Themes.Dark)
+	end
+
+	if typeof(accent) == "Color3" then
+		base.Accent = accent
+	end
+
+	return base
+end
+
+local function resolveStyle(config)
+	local style = copyDictionary(DefaultStyle)
+	for key, value in pairs(config.Style or {}) do
+		style[key] = value
+	end
+	if config.Font then
+		style.Font = config.Font
+	end
+	if config.Radius then
+		style.Radius = config.Radius
+	end
+	if config.Transparency ~= nil then
+		style.Transparency = config.Transparency
+	end
+	return style
+end
+
+local function resolveFontFamily(font)
+	if typeof(font) == "string" then
+		return FontAliases[font] or font
+	end
+	return FontAliases.BuilderSans
+end
+
+local function fontFace(style, weight, italic)
+	local family = resolveFontFamily(style and style.Font)
+	local ok, face = pcall(function()
+		return Font.new(family, weight or Enum.FontWeight.Medium, italic and Enum.FontStyle.Italic or Enum.FontStyle.Normal)
+	end)
+	if ok then
+		return face
+	end
+	return Font.new(FontAliases.GothamSSm, weight or Enum.FontWeight.Medium)
+end
+
+local function gradient(colorA, colorB, rotation, transparency)
+	return create("UIGradient", {
+		Color = ColorSequence.new({
+			ColorSequenceKeypoint.new(0, colorA),
+			ColorSequenceKeypoint.new(1, colorB),
+		}),
+		Rotation = rotation or 0,
+		Transparency = transparency or NumberSequence.new(0),
+	})
+end
+
+local function normalizeIcon(icon)
+	if typeof(icon) == "table" then
+		return icon
+	end
+	if typeof(icon) ~= "string" or icon == "" then
+		return nil
+	end
+	if string.find(icon, "rbxasset", 1, true) or string.find(icon, "http", 1, true) then
+		return {
+			Type = "Image",
+			Image = icon,
+		}
+	end
+	return {
+		Type = "Glyph",
+		Glyph = BuiltInIcons[string.lower(icon)] or icon,
+	}
+end
+
+local function makeIcon(theme, style, icon, size, color)
+	local data = normalizeIcon(icon)
+	size = size or 18
+
+	if not data then
+		return create("Frame", {
+			BackgroundTransparency = 1,
+			Size = UDim2.fromOffset(size, size),
+		})
+	end
+
+	if data.Type == "Image" or data.Image then
+		return create("ImageLabel", {
+			BackgroundTransparency = 1,
+			Image = data.Image,
+			ImageColor3 = data.Color or color or theme.Text,
+			ImageTransparency = data.Transparency or 0,
+			ScaleType = Enum.ScaleType.Fit,
+			Size = UDim2.fromOffset(data.Size or size, data.Size or size),
+		})
+	end
+
+	local label = create("TextLabel", {
+		BackgroundTransparency = 1,
+		FontFace = fontFace(style, data.Weight or Enum.FontWeight.Bold),
+		Text = data.Glyph or "?",
+		TextColor3 = data.Color or color or theme.Text,
+		TextSize = data.TextSize or math.floor(size * 0.82),
+		TextXAlignment = Enum.TextXAlignment.Center,
+		TextYAlignment = Enum.TextYAlignment.Center,
+		Size = UDim2.fromOffset(data.Size or size, data.Size or size),
+	})
+	return label
+end
+
+local function setIconColor(icon, color)
+	if icon:IsA("TextLabel") or icon:IsA("TextButton") then
+		icon.TextColor3 = color
+	elseif icon:IsA("ImageLabel") or icon:IsA("ImageButton") then
+		icon.ImageColor3 = color
+	end
 end
 
 local function corner(radius)
@@ -132,11 +351,11 @@ local function safeCallback(callback, ...)
 	end
 end
 
-local function makeText(theme, text, size, weight, color)
+local function makeText(theme, text, size, weight, color, style)
 	return create("TextLabel", {
 		BackgroundTransparency = 1,
 		Text = text or "",
-		FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", weight or Enum.FontWeight.Medium),
+		FontFace = fontFace(style, weight or Enum.FontWeight.Medium),
 		TextColor3 = color or theme.Text,
 		TextSize = size or 14,
 		TextXAlignment = Enum.TextXAlignment.Left,
@@ -220,7 +439,8 @@ Section.__index = Section
 function FluxWind:CreateWindow(config)
 	config = config or {}
 
-	local theme = Themes[config.Theme or "Dark"] or Themes.Dark
+	local theme = resolveTheme(config.Theme, config.Accent)
+	local style = resolveStyle(config)
 	local gui = create("ScreenGui", {
 		Name = config.Name or "FluxWind",
 		ResetOnSpawn = false,
@@ -239,8 +459,12 @@ function FluxWind:CreateWindow(config)
 		Size = config.Size or UDim2.fromOffset(650, 430),
 		Parent = gui,
 	}, {
-		corner(14),
+		corner(style.Radius),
 		stroke(theme.Stroke, 0.25, 1),
+		gradient(theme.Background, theme.Surface, 95, NumberSequence.new({
+			NumberSequenceKeypoint.new(0, 0),
+			NumberSequenceKeypoint.new(1, 0.08),
+		})),
 	})
 
 	local glow = create("ImageLabel", {
@@ -261,13 +485,29 @@ function FluxWind:CreateWindow(config)
 	local topBar = create("Frame", {
 		Name = "TopBar",
 		BackgroundColor3 = theme.Surface,
-		BackgroundTransparency = 0.04,
+		BackgroundTransparency = style.Transparency,
 		BorderSizePixel = 0,
 		Size = UDim2.new(1, 0, 0, 54),
 		ZIndex = 2,
 		Parent = root,
 	}, {
 		padding(0, 14, 0, 14),
+		gradient(theme.Surface2, theme.Surface, 0, NumberSequence.new({
+			NumberSequenceKeypoint.new(0, 0.06),
+			NumberSequenceKeypoint.new(1, 0.22),
+		})),
+	})
+
+	local accentLine = create("Frame", {
+		AnchorPoint = Vector2.new(0.5, 1),
+		BackgroundColor3 = theme.Accent,
+		BorderSizePixel = 0,
+		Position = UDim2.new(0.5, 0, 1, 0),
+		Size = UDim2.new(1, -28, 0, 1),
+		ZIndex = 3,
+		Parent = topBar,
+	}, {
+		gradient(theme.Accent, theme.Accent2, 0),
 	})
 
 	local titleWrap = create("Frame", {
@@ -276,14 +516,30 @@ function FluxWind:CreateWindow(config)
 		Parent = topBar,
 	})
 
-	local title = makeText(theme, config.Title or "FluxWind", 16, Enum.FontWeight.Bold)
-	title.Position = UDim2.fromOffset(0, 8)
-	title.Size = UDim2.new(1, 0, 0, 22)
+	local windowIcon = create("Frame", {
+		BackgroundColor3 = theme.Surface2,
+		BorderSizePixel = 0,
+		Position = UDim2.fromOffset(0, 12),
+		Size = UDim2.fromOffset(30, 30),
+		Parent = titleWrap,
+	}, {
+		corner(9),
+		stroke(theme.Stroke, 0.58, 1),
+		gradient(theme.Surface3, theme.Surface2, 45),
+	})
+	local windowIconGlyph = makeIcon(theme, style, config.Icon or "spark", 18, theme.Accent2)
+	windowIconGlyph.AnchorPoint = Vector2.new(0.5, 0.5)
+	windowIconGlyph.Position = UDim2.fromScale(0.5, 0.5)
+	windowIconGlyph.Parent = windowIcon
+
+	local title = makeText(theme, config.Title or "FluxWind", 16, Enum.FontWeight.Bold, nil, style)
+	title.Position = UDim2.fromOffset(40, 8)
+	title.Size = UDim2.new(1, -40, 0, 22)
 	title.Parent = titleWrap
 
-	local subtitle = makeText(theme, config.Subtitle or "Modern Roblox UI Library", 11, Enum.FontWeight.Medium, theme.Muted)
-	subtitle.Position = UDim2.fromOffset(0, 29)
-	subtitle.Size = UDim2.new(1, 0, 0, 16)
+	local subtitle = makeText(theme, config.Subtitle or "Modern Roblox UI Library", 11, Enum.FontWeight.Medium, theme.Muted, style)
+	subtitle.Position = UDim2.fromOffset(40, 29)
+	subtitle.Size = UDim2.new(1, -40, 0, 16)
 	subtitle.Parent = titleWrap
 
 	local controls = create("Frame", {
@@ -303,7 +559,7 @@ function FluxWind:CreateWindow(config)
 		Text = "-",
 		TextColor3 = theme.Muted,
 		TextSize = 18,
-		FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold),
+		FontFace = fontFace(style, Enum.FontWeight.Bold),
 		Parent = controls,
 	}, {
 		corner(8),
@@ -316,7 +572,7 @@ function FluxWind:CreateWindow(config)
 		Text = "x",
 		TextColor3 = theme.Muted,
 		TextSize = 14,
-		FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold),
+		FontFace = fontFace(style, Enum.FontWeight.Bold),
 		Parent = controls,
 	}, {
 		corner(8),
@@ -333,19 +589,23 @@ function FluxWind:CreateWindow(config)
 	local sidebar = create("Frame", {
 		Name = "Sidebar",
 		BackgroundColor3 = theme.Surface,
-		BackgroundTransparency = 0.12,
+		BackgroundTransparency = math.clamp(style.Transparency + 0.08, 0, 1),
 		BorderSizePixel = 0,
 		Size = UDim2.new(0, 178, 1, 0),
 		Parent = body,
 	}, {
 		padding(14, 12, 14, 12),
+		gradient(theme.Surface, theme.Surface2, 90, NumberSequence.new({
+			NumberSequenceKeypoint.new(0, 0.03),
+			NumberSequenceKeypoint.new(1, 0.18),
+		})),
 	})
 
 	local search = create("TextBox", {
 		BackgroundColor3 = theme.Surface2,
 		BorderSizePixel = 0,
 		ClearTextOnFocus = false,
-		FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Medium),
+		FontFace = fontFace(style, Enum.FontWeight.Medium),
 		PlaceholderColor3 = theme.Muted,
 		PlaceholderText = "Search...",
 		Position = UDim2.fromOffset(12, 12),
@@ -353,12 +613,18 @@ function FluxWind:CreateWindow(config)
 		Text = "",
 		TextColor3 = theme.Text,
 		TextSize = 12,
+		TextXAlignment = Enum.TextXAlignment.Left,
 		Parent = sidebar,
 	}, {
 		corner(9),
-		padding(0, 12, 0, 12),
+		padding(0, 12, 0, 30),
 		stroke(theme.Stroke, 0.55, 1),
 	})
+
+	local searchIcon = makeIcon(theme, style, "search", 14, theme.Muted)
+	searchIcon.AnchorPoint = Vector2.new(0, 0.5)
+	searchIcon.Position = UDim2.new(0, 10, 0.5, 0)
+	searchIcon.Parent = search
 
 	local tabsHolder = create("ScrollingFrame", {
 		Name = "Tabs",
@@ -386,6 +652,7 @@ function FluxWind:CreateWindow(config)
 		corner(11),
 		padding(0, 10, 0, 10),
 		stroke(theme.Stroke, 0.62, 1),
+		gradient(theme.Surface3, theme.Surface2, 25),
 	})
 
 	local avatar = create("Frame", {
@@ -396,19 +663,20 @@ function FluxWind:CreateWindow(config)
 		Parent = userBox,
 	}, {
 		corner(14),
+		gradient(theme.Accent, theme.Accent2, 45),
 	})
 
-	local userInitial = makeText(theme, string.sub((config.User or "A"), 1, 1), 13, Enum.FontWeight.Bold, Color3.new(1, 1, 1))
+	local userInitial = makeText(theme, string.sub((config.User or "A"), 1, 1), 13, Enum.FontWeight.Bold, Color3.new(1, 1, 1), style)
 	userInitial.TextXAlignment = Enum.TextXAlignment.Center
 	userInitial.Size = UDim2.fromScale(1, 1)
 	userInitial.Parent = avatar
 
-	local userName = makeText(theme, config.User or "Anonymous", 12, Enum.FontWeight.Bold)
+	local userName = makeText(theme, config.User or "Anonymous", 12, Enum.FontWeight.Bold, nil, style)
 	userName.Position = UDim2.fromOffset(46, 7)
 	userName.Size = UDim2.new(1, -54, 0, 17)
 	userName.Parent = userBox
 
-	local userRole = makeText(theme, config.Role or "Free user", 10, Enum.FontWeight.Medium, theme.Muted)
+	local userRole = makeText(theme, config.Role or "Free user", 10, Enum.FontWeight.Medium, theme.Muted, style)
 	userRole.Position = UDim2.fromOffset(46, 23)
 	userRole.Size = UDim2.new(1, -54, 0, 15)
 	userRole.Parent = userBox
@@ -442,6 +710,7 @@ function FluxWind:CreateWindow(config)
 		Pages = pages,
 		Theme = theme,
 		ThemeName = config.Theme or "Dark",
+		Style = style,
 		Tabs = {},
 		ActiveTab = nil,
 		Minimized = false,
@@ -506,7 +775,7 @@ function Window:Notify(config)
 
 	local card = create("Frame", {
 		BackgroundColor3 = self.Theme.Surface,
-		BackgroundTransparency = 0.04,
+		BackgroundTransparency = self.Style.Transparency,
 		BorderSizePixel = 0,
 		Size = UDim2.fromOffset(280, 0),
 		Parent = holder,
@@ -514,15 +783,21 @@ function Window:Notify(config)
 		corner(12),
 		padding(12, 14, 12, 14),
 		stroke(self.Theme.Stroke, 0.4, 1),
+		gradient(self.Theme.Surface2, self.Theme.Surface, 35),
 	})
 
-	local title = makeText(self.Theme, config.Title or "Notification", 13, Enum.FontWeight.Bold)
-	title.Size = UDim2.new(1, 0, 0, 18)
+	local icon = makeIcon(self.Theme, self.Style, config.Icon or "bell", 20, config.Color or self.Theme.Accent2)
+	icon.Position = UDim2.fromOffset(0, 2)
+	icon.Parent = card
+
+	local title = makeText(self.Theme, config.Title or "Notification", 13, Enum.FontWeight.Bold, nil, self.Style)
+	title.Position = UDim2.fromOffset(30, 0)
+	title.Size = UDim2.new(1, -30, 0, 18)
 	title.Parent = card
 
-	local message = makeText(self.Theme, config.Content or "", 11, Enum.FontWeight.Medium, self.Theme.Muted)
-	message.Position = UDim2.fromOffset(0, 20)
-	message.Size = UDim2.new(1, 0, 0, 18)
+	local message = makeText(self.Theme, config.Content or "", 11, Enum.FontWeight.Medium, self.Theme.Muted, self.Style)
+	message.Position = UDim2.fromOffset(30, 20)
+	message.Size = UDim2.new(1, -30, 0, 18)
 	message.Parent = card
 
 	card.Size = UDim2.fromOffset(280, 0)
@@ -562,6 +837,7 @@ function Window:CreateTab(config)
 	}, {
 		corner(10),
 		padding(0, 12, 0, 12),
+		stroke(self.Theme.Stroke, 0.9, 1),
 	})
 
 	local indicator = create("Frame", {
@@ -576,8 +852,26 @@ function Window:CreateTab(config)
 		corner(4),
 	})
 
-	local label = makeText(self.Theme, (config.Icon and (config.Icon .. "  ") or "") .. name, 12, Enum.FontWeight.Bold, self.Theme.Muted)
-	label.Size = UDim2.new(1, 0, 1, 0)
+	local iconWrap = create("Frame", {
+		AnchorPoint = Vector2.new(0, 0.5),
+		BackgroundColor3 = self.Theme.Surface3,
+		BackgroundTransparency = 0.25,
+		BorderSizePixel = 0,
+		Position = UDim2.new(0, 10, 0.5, 0),
+		Size = UDim2.fromOffset(24, 24),
+		Parent = button,
+	}, {
+		corner(8),
+	})
+
+	local tabIcon = makeIcon(self.Theme, self.Style, config.Icon or name, 15, self.Theme.Muted)
+	tabIcon.AnchorPoint = Vector2.new(0.5, 0.5)
+	tabIcon.Position = UDim2.fromScale(0.5, 0.5)
+	tabIcon.Parent = iconWrap
+
+	local label = makeText(self.Theme, name, 12, Enum.FontWeight.Bold, self.Theme.Muted, self.Style)
+	label.Position = UDim2.fromOffset(42, 0)
+	label.Size = UDim2.new(1, -48, 1, 0)
 	label.Parent = button
 
 	local page = create("ScrollingFrame", {
@@ -609,6 +903,8 @@ function Window:CreateTab(config)
 		Name = name,
 		Button = button,
 		Label = label,
+		Icon = tabIcon,
+		IconWrap = iconWrap,
 		Indicator = indicator,
 		Page = page,
 		Sections = {},
@@ -633,9 +929,14 @@ function Window:SelectTab(tab)
 		item.Page.Visible = active
 		item.Indicator.Visible = active
 		item.Label.TextColor3 = active and self.Theme.Text or self.Theme.Muted
+		setIconColor(item.Icon, active and self.Theme.Accent2 or self.Theme.Muted)
 		tween(item.Button, TweenInfo.new(0.16), {
 			BackgroundTransparency = active and 0 or 0.28,
 			BackgroundColor3 = active and self.Theme.Surface3 or self.Theme.Surface2,
+		})
+		tween(item.IconWrap, TweenInfo.new(0.16), {
+			BackgroundTransparency = active and 0.05 or 0.25,
+			BackgroundColor3 = active and self.Theme.Accent or self.Theme.Surface3,
 		})
 	end
 
@@ -647,26 +948,44 @@ function Tab:CreateSection(config)
 
 	local sectionFrame = create("Frame", {
 		BackgroundColor3 = self.Window.Theme.Surface,
-		BackgroundTransparency = 0.05,
+		BackgroundTransparency = self.Window.Style.Transparency,
 		BorderSizePixel = 0,
 		Size = UDim2.new(1, 0, 0, 52),
 		Parent = self.Page,
 	}, {
-		corner(13),
+		corner(math.max(self.Window.Style.Radius - 1, 8)),
 		padding(14, 14, 14, 14),
 		stroke(self.Window.Theme.Stroke, 0.5, 1),
+		gradient(self.Window.Theme.Surface2, self.Window.Theme.Surface, 80, NumberSequence.new({
+			NumberSequenceKeypoint.new(0, 0.05),
+			NumberSequenceKeypoint.new(1, 0.2),
+		})),
 		listLayout(10, false),
 	})
 
-	local title = makeText(self.Window.Theme, config.Name or "Section", 13, Enum.FontWeight.Bold)
-	title.Size = UDim2.new(1, 0, 0, 18)
-	title.Parent = sectionFrame
-
 	local descText = config.Description
+	local header = create("Frame", {
+		BackgroundTransparency = 1,
+		Size = UDim2.new(1, 0, 0, descText and 38 or 20),
+		Parent = sectionFrame,
+	})
+
+	local sectionIcon = makeIcon(self.Window.Theme, self.Window.Style, config.Icon or "spark", 16, self.Window.Theme.Accent2)
+	sectionIcon.AnchorPoint = Vector2.new(0, 0)
+	sectionIcon.Position = UDim2.fromOffset(0, 1)
+	sectionIcon.Size = UDim2.fromOffset(18, 18)
+	sectionIcon.Parent = header
+
+	local title = makeText(self.Window.Theme, config.Name or "Section", 13, Enum.FontWeight.Bold, nil, self.Window.Style)
+	title.Position = UDim2.fromOffset(26, 0)
+	title.Size = UDim2.new(1, -26, 0, 18)
+	title.Parent = header
+
 	if descText then
-		local desc = makeText(self.Window.Theme, descText, 11, Enum.FontWeight.Medium, self.Window.Theme.Muted)
-		desc.Size = UDim2.new(1, 0, 0, 16)
-		desc.Parent = sectionFrame
+		local desc = makeText(self.Window.Theme, descText, 11, Enum.FontWeight.Medium, self.Window.Theme.Muted, self.Window.Style)
+		desc.Position = UDim2.fromOffset(26, 20)
+		desc.Size = UDim2.new(1, -26, 0, 16)
+		desc.Parent = header
 	end
 
 	local content = create("Frame", {
@@ -679,7 +998,7 @@ function Tab:CreateSection(config)
 
 	content.UIListLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
 		content.Size = UDim2.new(1, 0, 0, content.UIListLayout.AbsoluteContentSize.Y)
-		sectionFrame.Size = UDim2.new(1, 0, 0, content.UIListLayout.AbsoluteContentSize.Y + (descText and 72 or 48))
+		sectionFrame.Size = UDim2.new(1, 0, 0, content.UIListLayout.AbsoluteContentSize.Y + (descText and 76 or 58))
 	end)
 
 	local section = setmetatable({
@@ -701,20 +1020,32 @@ local function createRow(section, config, height)
 		Size = UDim2.new(1, 0, 0, height or 46),
 		Parent = section.Content,
 	}, {
-		corner(10),
+		corner(math.max(section.Window.Style.Radius - 4, 8)),
 		padding(0, 12, 0, 12),
 		stroke(section.Window.Theme.Stroke, 0.7, 1),
+		gradient(section.Window.Theme.Surface2, section.Window.Theme.Surface3, 0, NumberSequence.new({
+			NumberSequenceKeypoint.new(0, 0.08),
+			NumberSequenceKeypoint.new(1, 0.24),
+		})),
 	})
 
-	local title = makeText(section.Window.Theme, config.Name or "Control", 12, Enum.FontWeight.Bold)
-	title.Position = UDim2.fromOffset(0, config.Description and 7 or 0)
-	title.Size = UDim2.new(1, -146, 0, 20)
+	local textOffset = config.Icon and 32 or 0
+	if config.Icon then
+		local rowIcon = makeIcon(section.Window.Theme, section.Window.Style, config.Icon, 18, config.IconColor or section.Window.Theme.Accent2)
+		rowIcon.AnchorPoint = Vector2.new(0, 0.5)
+		rowIcon.Position = UDim2.new(0, 0, 0.5, 0)
+		rowIcon.Parent = row
+	end
+
+	local title = makeText(section.Window.Theme, config.Name or "Control", 12, Enum.FontWeight.Bold, nil, section.Window.Style)
+	title.Position = UDim2.fromOffset(textOffset, config.Description and 7 or 0)
+	title.Size = UDim2.new(1, -146 - textOffset, 0, 20)
 	title.Parent = row
 
 	if config.Description then
-		local desc = makeText(section.Window.Theme, config.Description, 10, Enum.FontWeight.Medium, section.Window.Theme.Muted)
-		desc.Position = UDim2.fromOffset(0, 24)
-		desc.Size = UDim2.new(1, -146, 0, 15)
+		local desc = makeText(section.Window.Theme, config.Description, 10, Enum.FontWeight.Medium, section.Window.Theme.Muted, section.Window.Style)
+		desc.Position = UDim2.fromOffset(textOffset, 24)
+		desc.Size = UDim2.new(1, -146 - textOffset, 0, 15)
 		desc.Parent = row
 	end
 
@@ -729,7 +1060,7 @@ function Section:Button(config)
 		AnchorPoint = Vector2.new(1, 0.5),
 		BackgroundColor3 = self.Window.Theme.Accent,
 		BorderSizePixel = 0,
-		FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold),
+		FontFace = fontFace(self.Window.Style, Enum.FontWeight.Bold),
 		Position = UDim2.new(1, 0, 0.5, 0),
 		Size = UDim2.fromOffset(96, 30),
 		Text = config.Text or "Run",
@@ -738,6 +1069,7 @@ function Section:Button(config)
 		Parent = row,
 	}, {
 		corner(9),
+		gradient(self.Window.Theme.Accent, self.Window.Theme.Accent2, 0),
 	})
 
 	button.MouseEnter:Connect(function()
@@ -921,7 +1253,7 @@ function Section:Dropdown(config)
 		AnchorPoint = Vector2.new(1, 0.5),
 		BackgroundColor3 = self.Window.Theme.Surface3,
 		BorderSizePixel = 0,
-		FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold),
+		FontFace = fontFace(self.Window.Style, Enum.FontWeight.Bold),
 		Position = UDim2.new(1, 0, 0.5, 0),
 		Size = UDim2.fromOffset(132, 30),
 		Text = tostring(selected) .. "  v",
@@ -932,6 +1264,7 @@ function Section:Dropdown(config)
 	}, {
 		corner(9),
 		padding(0, 8, 0, 8),
+		stroke(self.Window.Theme.Stroke, 0.72, 1),
 	})
 
 	local menu = create("Frame", {
@@ -974,7 +1307,7 @@ function Section:Dropdown(config)
 		local optionButton = create("TextButton", {
 			BackgroundColor3 = self.Window.Theme.Surface2,
 			BorderSizePixel = 0,
-			FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Medium),
+			FontFace = fontFace(self.Window.Style, Enum.FontWeight.Medium),
 			Size = UDim2.new(1, 0, 0, 26),
 			Text = tostring(option),
 			TextColor3 = self.Window.Theme.Text,
@@ -1017,7 +1350,7 @@ function Section:Input(config)
 		BackgroundColor3 = self.Window.Theme.Surface3,
 		BorderSizePixel = 0,
 		ClearTextOnFocus = config.ClearTextOnFocus == true,
-		FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Medium),
+		FontFace = fontFace(self.Window.Style, Enum.FontWeight.Medium),
 		PlaceholderColor3 = self.Window.Theme.Muted,
 		PlaceholderText = config.Placeholder or "Enter text...",
 		Position = UDim2.new(1, 0, 0.5, 0),
@@ -1025,10 +1358,12 @@ function Section:Input(config)
 		Text = config.Default or "",
 		TextColor3 = self.Window.Theme.Text,
 		TextSize = 11,
+		TextXAlignment = Enum.TextXAlignment.Left,
 		Parent = row,
 	}, {
 		corner(9),
 		padding(0, 8, 0, 8),
+		stroke(self.Window.Theme.Stroke, 0.72, 1),
 	})
 
 	box.FocusLost:Connect(function(enterPressed)
@@ -1038,6 +1373,111 @@ function Section:Input(config)
 	end)
 
 	return box
+end
+
+function Section:ColorPicker(config)
+	config = config or {}
+
+	local presets = config.Presets or {
+		self.Window.Theme.Accent,
+		self.Window.Theme.Accent2,
+		Color3.fromRGB(96, 165, 250),
+		Color3.fromRGB(45, 212, 191),
+		Color3.fromRGB(168, 85, 247),
+		Color3.fromRGB(244, 114, 182),
+		Color3.fromRGB(251, 191, 36),
+		Color3.fromRGB(248, 113, 113),
+	}
+	local selected = config.Default or presets[1] or self.Window.Theme.Accent
+	local open = false
+
+	local row = createRow(self, config, 50)
+	local swatch = create("TextButton", {
+		AnchorPoint = Vector2.new(1, 0.5),
+		BackgroundColor3 = selected,
+		BorderSizePixel = 0,
+		Position = UDim2.new(1, 0, 0.5, 0),
+		Size = UDim2.fromOffset(56, 30),
+		Text = "",
+		Parent = row,
+	}, {
+		corner(9),
+		stroke(self.Window.Theme.Stroke, 0.36, 1),
+	})
+
+	local menu = create("Frame", {
+		BackgroundColor3 = self.Window.Theme.Surface2,
+		BorderSizePixel = 0,
+		ClipsDescendants = true,
+		Position = UDim2.new(1, -150, 1, 6),
+		Size = UDim2.fromOffset(150, 0),
+		Visible = false,
+		ZIndex = 14,
+		Parent = row,
+	}, {
+		corner(10),
+		padding(8, 8, 8, 8),
+		stroke(self.Window.Theme.Stroke, 0.42, 1),
+	})
+
+	local grid = create("UIGridLayout", {
+		CellPadding = UDim2.fromOffset(6, 6),
+		CellSize = UDim2.fromOffset(28, 28),
+		SortOrder = Enum.SortOrder.LayoutOrder,
+		Parent = menu,
+	})
+
+	local object = {}
+
+	local function setOpen(value)
+		open = value
+		menu.Visible = true
+		local rows = math.ceil(#presets / 4)
+		tween(menu, TweenInfo.new(0.18), {
+			Size = UDim2.fromOffset(150, open and (rows * 34 + 16) or 0),
+		}).Completed:Connect(function()
+			if not open then
+				menu.Visible = false
+			end
+		end)
+	end
+
+	function object:Set(value)
+		selected = value
+		swatch.BackgroundColor3 = selected
+		safeCallback(config.Callback, selected)
+	end
+
+	for index, color in ipairs(presets) do
+		local colorButton = create("TextButton", {
+			BackgroundColor3 = color,
+			BorderSizePixel = 0,
+			LayoutOrder = index,
+			Text = "",
+			ZIndex = 15,
+			Parent = menu,
+		}, {
+			corner(8),
+			stroke(Color3.new(1, 1, 1), 0.72, 1),
+		})
+
+		colorButton.MouseButton1Click:Connect(function()
+			object:Set(color)
+			setOpen(false)
+		end)
+	end
+
+	swatch.MouseButton1Click:Connect(function()
+		setOpen(not open)
+	end)
+
+	grid:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+		if open then
+			menu.Size = UDim2.fromOffset(150, grid.AbsoluteContentSize.Y + 16)
+		end
+	end)
+
+	return object
 end
 
 function Section:Keybind(config)
@@ -1051,7 +1491,7 @@ function Section:Keybind(config)
 		AnchorPoint = Vector2.new(1, 0.5),
 		BackgroundColor3 = self.Window.Theme.Surface3,
 		BorderSizePixel = 0,
-		FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold),
+		FontFace = fontFace(self.Window.Style, Enum.FontWeight.Bold),
 		Position = UDim2.new(1, 0, 0.5, 0),
 		Size = UDim2.fromOffset(118, 30),
 		Text = current.Name,
@@ -1060,6 +1500,7 @@ function Section:Keybind(config)
 		Parent = row,
 	}, {
 		corner(9),
+		stroke(self.Window.Theme.Stroke, 0.72, 1),
 	})
 
 	button.MouseButton1Click:Connect(function()
@@ -1106,23 +1547,46 @@ function Section:Paragraph(config)
 		Size = UDim2.new(1, 0, 0, 66),
 		Parent = self.Content,
 	}, {
-		corner(10),
+		corner(math.max(self.Window.Style.Radius - 4, 8)),
 		padding(12, 12, 12, 12),
 		stroke(self.Window.Theme.Stroke, 0.72, 1),
+		gradient(self.Window.Theme.Surface2, self.Window.Theme.Surface3, 0, NumberSequence.new({
+			NumberSequenceKeypoint.new(0, 0.08),
+			NumberSequenceKeypoint.new(1, 0.24),
+		})),
 	})
 
-	local title = makeText(self.Window.Theme, config.Title or "Paragraph", 12, Enum.FontWeight.Bold)
-	title.Size = UDim2.new(1, 0, 0, 18)
+	local icon = makeIcon(self.Window.Theme, self.Window.Style, config.Icon or "info", 16, config.IconColor or self.Window.Theme.Accent2)
+	icon.Position = UDim2.fromOffset(0, 1)
+	icon.Parent = row
+
+	local title = makeText(self.Window.Theme, config.Title or "Paragraph", 12, Enum.FontWeight.Bold, nil, self.Window.Style)
+	title.Position = UDim2.fromOffset(24, 0)
+	title.Size = UDim2.new(1, -24, 0, 18)
 	title.Parent = row
 
-	local body = makeText(self.Window.Theme, config.Content or "", 11, Enum.FontWeight.Medium, self.Window.Theme.Muted)
-	body.Position = UDim2.fromOffset(0, 24)
-	body.Size = UDim2.new(1, 0, 0, 30)
+	local body = makeText(self.Window.Theme, config.Content or "", 11, Enum.FontWeight.Medium, self.Window.Theme.Muted, self.Window.Style)
+	body.Position = UDim2.fromOffset(24, 24)
+	body.Size = UDim2.new(1, -24, 0, 30)
 	body.TextWrapped = true
 	body.TextYAlignment = Enum.TextYAlignment.Top
 	body.Parent = row
 
 	return row
+end
+
+function FluxWind:RegisterTheme(name, theme)
+	assert(typeof(name) == "string" and name ~= "", "Theme name must be a non-empty string.")
+	assert(typeof(theme) == "table", "Theme must be a table.")
+	Themes[name] = resolveTheme(theme)
+	return Themes[name]
+end
+
+function FluxWind:RegisterIcon(name, icon)
+	assert(typeof(name) == "string" and name ~= "", "Icon name must be a non-empty string.")
+	local normalized = normalizeIcon(icon)
+	BuiltInIcons[string.lower(name)] = normalized and (normalized.Glyph or normalized.Image) or icon
+	return BuiltInIcons[string.lower(name)]
 end
 
 function FluxWind:GetThemes()
