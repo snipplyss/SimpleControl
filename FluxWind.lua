@@ -41,11 +41,11 @@ Lib.A = {
 -- ━━━━━━━━━━━━━━━━━━━━━━━━━━ FONTS ━━━━━━━━━━━━━━━━━━━━━━━━━━
 local F = {
     Logo = Font.new("rbxasset://fonts/families/Montserrat.json", Enum.FontWeight.ExtraBold),
-    Head = Font.new("rbxasset://fonts/families/Montserrat.json", Enum.FontWeight.Bold),
-    Sm   = Font.new("rbxasset://fonts/families/GothamSSm.json",  Enum.FontWeight.SemiBold),
-    Md   = Font.new("rbxasset://fonts/families/GothamSSm.json",  Enum.FontWeight.Medium),
-    Rg   = Font.new("rbxasset://fonts/families/GothamSSm.json",  Enum.FontWeight.Regular),
-    Bd   = Font.new("rbxasset://fonts/families/GothamSSm.json",  Enum.FontWeight.Bold),
+    Head = Font.new("rbxasset://fonts/families/Montserrat.json", Enum.FontWeight.ExtraBold),
+    Sm   = Font.new("rbxasset://fonts/families/GothamSSm.json",  Enum.FontWeight.Bold),
+    Md   = Font.new("rbxasset://fonts/families/GothamSSm.json",  Enum.FontWeight.SemiBold),
+    Rg   = Font.new("rbxasset://fonts/families/GothamSSm.json",  Enum.FontWeight.Medium),
+    Bd   = Font.new("rbxasset://fonts/families/GothamSSm.json",  Enum.FontWeight.ExtraBold),
 }
 
 -- ━━━━━━━━━━━━━━━━━━━━━━━━━━ HELPERS ━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -73,7 +73,7 @@ function Lib.new()
 
     -- Drag container
     local ctn = N("Frame",{Parent=gui, BackgroundTransparency=1, Name="Container",
-        Position=UDim2.new(0.5,-494,0.5,-334), Size=UDim2.new(0,988,0,668)})
+        Position=UDim2.new(0.5,-410,0.5,-278), Size=UDim2.new(0,820,0,556)})
     self.Container = ctn
 
     -- Outer soft glow halos (behind window, never clipped)
@@ -88,7 +88,7 @@ function Lib.new()
 
     -- Window
     local win = N("Frame",{Parent=ctn,Name="Window",BackgroundColor3=C.BG,
-        Position=UDim2.new(0,4,0,4),Size=UDim2.new(0,980,0,660),ClipsDescendants=true},{Rad(12)})
+        Position=UDim2.new(0,4,0,4),Size=UDim2.new(0,812,0,548),ClipsDescendants=true},{Rad(12)})
     self.Window = win
 
     -- Pulsing neon border + glow (direct property set every frame = real animation)
@@ -143,9 +143,9 @@ function Lib.new()
     end
 
     -- Size constants
-    local NRM_CTN  = UDim2.new(0,988,0,668)
-    local NRM_WIN  = UDim2.new(0,980,0,660)
-    local MINI_CTN = UDim2.new(0,288,0,60)
+    local NRM_CTN  = UDim2.new(0,820,0,556)
+    local NRM_WIN  = UDim2.new(0,812,0,548)
+    local MINI_CTN = UDim2.new(0,260,0,52)
     local TI_Q     = TweenInfo.new(0.22,Enum.EasingStyle.Quart,Enum.EasingDirection.Out)
     local TI_B     = TweenInfo.new(0.28,Enum.EasingStyle.Back, Enum.EasingDirection.Out)
     local minimized  = false
@@ -169,7 +169,7 @@ function Lib.new()
             ColorSequenceKeypoint.new(1,  Color3.fromRGB(152,62,215)),
         },Rotation=35})
     local expandBtn = N("ImageButton",{Parent=miniWin,BackgroundColor3=C.WB,
-        Image="rbxassetid://10734943193",ImageColor3=Color3.new(1,1,1),
+        Image="rbxassetid://10734895698",ImageColor3=Color3.new(1,1,1),
         Position=UDim2.new(1,-52,0.5,-11),Size=UDim2.new(0,22,0,22)},{Rad(6)})
     Pad(4,4,4,4).Parent=expandBtn
     local mClose = N("ImageButton",{Parent=miniWin,BackgroundColor3=C.Cls,
@@ -178,7 +178,7 @@ function Lib.new()
     Pad(4,4,4,4).Parent=mClose
 
     -- Minimize: hide main window, show mini card
-    IBtn(C.WB,"rbxassetid://7072706620",1).MouseButton1Click:Connect(function()
+    IBtn(C.WB,"rbxassetid://10734896206",1).MouseButton1Click:Connect(function()
         if fullscreen then return end
         minimized = true
         win.Visible = false
@@ -202,7 +202,7 @@ function Lib.new()
     end)
 
     -- Fullscreen: fill viewport
-    IBtn(C.WB,"rbxassetid://10734943193",2).MouseButton1Click:Connect(function()
+    IBtn(C.WB,"rbxassetid://10734895698",2).MouseButton1Click:Connect(function()
         if minimized then return end
         fullscreen = not fullscreen
         if fullscreen then
@@ -244,7 +244,7 @@ function Lib.new()
     -- Sidebar
     local sb = N("Frame",{Parent=content,BackgroundColor3=C.Side,Size=UDim2.new(0,188,1,0)},{Str(C.Bdr,1)})
     local nav = N("Frame",{Parent=sb,BackgroundTransparency=1,
-        Position=UDim2.new(0,0,0,12),Size=UDim2.new(1,0,1,-112)})
+        Position=UDim2.new(0,0,0,12),Size=UDim2.new(1,0,1,-108)})
     Lst(3).Parent=nav; Pad(0,0,10,10).Parent=nav
 
     -- Tab container
@@ -264,12 +264,15 @@ function Lib.new()
 
     for i, def in ipairs(defs) do
         local btn = N("TextButton",{Parent=nav,BackgroundColor3=C.SbN,
-            Size=UDim2.new(1,0,0,44),Text="",LayoutOrder=i},{Rad(8)})
+            Size=UDim2.new(1,0,0,40),Text="",LayoutOrder=i},{Rad(8)})
+        local bAcc = N("Frame",{Parent=btn,BackgroundColor3=C.Acc,
+            Position=UDim2.new(0,0,0.15,0),Size=UDim2.new(0,3,0.7,0),
+            Visible=false},{Rad(2)})
         local bIc = N("ImageLabel",{Parent=btn,BackgroundTransparency=1,
             Image=def.ic,ImageColor3=C.T2,
-            Position=UDim2.new(0,12,0.5,-9),Size=UDim2.new(0,18,0,18)})
+            Position=UDim2.new(0,14,0.5,-9),Size=UDim2.new(0,18,0,18)})
         local bTxt = N("TextLabel",{Parent=btn,BackgroundTransparency=1,
-            Position=UDim2.new(0,36,0,0),Size=UDim2.new(1,-44,1,0),
+            Position=UDim2.new(0,38,0,0),Size=UDim2.new(1,-46,1,0),
             Text=def.n,TextColor3=C.T2,TextSize=13,FontFace=F.Sm,TextXAlignment=Enum.TextXAlignment.Left})
 
         local tf = N("Frame",{Parent=tabCon,BackgroundTransparency=1,
@@ -292,7 +295,7 @@ function Lib.new()
             BorderSizePixel=0})
         Pad(12,12,14,14).Parent=scroll; Lst(10).Parent=scroll
 
-        self.Tabs[def.n] = {frame=tf, scroll=scroll, btn=btn, ic=bIc, lbl=bTxt}
+        self.Tabs[def.n] = {frame=tf, scroll=scroll, btn=btn, ic=bIc, lbl=bTxt, acc=bAcc}
 
         btn.MouseButton1Click:Connect(function() self:SwitchTab(def.n) end)
         btn.MouseEnter:Connect(function()
@@ -305,7 +308,7 @@ function Lib.new()
 
     -- User card
     local uc = N("Frame",{Parent=sb,BackgroundColor3=C.SbN,
-        Position=UDim2.new(0,10,1,-100),Size=UDim2.new(1,-20,0,88)},{Rad(10),Str(C.Bdr,1)})
+        Position=UDim2.new(0,10,1,-96),Size=UDim2.new(1,-20,0,84)},{Rad(10),Str(C.Bdr,1)})
     local av = N("Frame",{Parent=uc,BackgroundColor3=C.UBg,
         Position=UDim2.new(0,10,0.5,-20),Size=UDim2.new(0,40,0,40)},{Rad(20)})
     N("TextLabel",{Parent=av,BackgroundTransparency=1,Size=UDim2.new(1,0,1,0),
@@ -403,6 +406,7 @@ function Lib:SwitchTab(name)
         TS:Create(t.btn, TweenInfo.new(0.15), {BackgroundColor3 = a and C.SbA or C.SbN}):Play()
         TS:Create(t.lbl, TweenInfo.new(0.15), {TextColor3       = a and C.T1  or C.T2 }):Play()
         t.ic.ImageColor3 = a and C.AHi or C.T2
+        if t.acc then t.acc.Visible = a end
     end
     self.ActiveTab = name
 end
