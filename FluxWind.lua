@@ -436,15 +436,13 @@ function Lib:AddSection(parent, title)
     local card = N("Frame",{Parent=parent,BackgroundColor3=C.Card,
         Size=UDim2.new(1,0,0,0),AutomaticSize=Enum.AutomaticSize.Y,
         LayoutOrder=#parent:GetChildren()},{Rad(10),Str(C.Bdr,1)})
-    local hdr = N("Frame",{Parent=card,BackgroundColor3=C.Sec,Size=UDim2.new(1,0,0,32)})
-    Rad(10).Parent = hdr
-    N("Frame",{Parent=hdr,BackgroundColor3=C.Sec,Position=UDim2.new(0,0,0.5,0),Size=UDim2.new(1,0,0.5,0)})
+    local hdr = N("Frame",{Parent=card,BackgroundColor3=C.Card,Size=UDim2.new(1,0,0,32)})
     N("Frame",{Parent=hdr,BackgroundColor3=C.Acc,Position=UDim2.new(0,0,0.18,0),Size=UDim2.new(0,3,0.64,0)},{Rad(2)})
     N("TextLabel",{Parent=hdr,BackgroundTransparency=1,
         Position=UDim2.new(0,12,0,0),Size=UDim2.new(1,-16,1,0),
         Text=title,TextColor3=C.T1,TextSize=13,FontFace=F.Sm,TextXAlignment=Enum.TextXAlignment.Left})
     local body = N("Frame",{Parent=card,BackgroundTransparency=1,
-        Position=UDim2.new(0,12,0,40),Size=UDim2.new(1,-24,0,0),AutomaticSize=Enum.AutomaticSize.Y})
+        Position=UDim2.new(0,12,0,38),Size=UDim2.new(1,-24,0,0),AutomaticSize=Enum.AutomaticSize.Y})
     Lst(8).Parent = body
     N("Frame",{Parent=card,BackgroundTransparency=1,Size=UDim2.new(1,0,0,10),LayoutOrder=999})
     return body
@@ -541,15 +539,56 @@ function Lib:AddDropdown(parent, label, options, default, callback)
     local sel = N("TextLabel",{Parent=dd,BackgroundTransparency=1,
         Position=UDim2.new(0,10,0,0),Size=UDim2.new(1,-26,1,0),
         Text=default or options[1],TextColor3=C.T1,TextSize=12,FontFace=F.Md,TextXAlignment=Enum.TextXAlignment.Left})
-    N("ImageLabel",{Parent=dd,BackgroundTransparency=1,
+    local arrow = N("ImageLabel",{Parent=dd,BackgroundTransparency=1,
         Image="rbxassetid://10709767827",ImageColor3=C.T2,
         Position=UDim2.new(1,-20,0.5,-7),Size=UDim2.new(0,14,0,14)})
-    N("TextButton",{Parent=dd,BackgroundTransparency=1,Size=UDim2.new(1,0,1,0),Text=""})
+
+    -- List parented to win to escape ScrollingFrame clipping
+    local win = self.Window
+    local itemH = 26
+    local list = N("Frame",{Parent=win,BackgroundColor3=C.Pnl,
+        Size=UDim2.new(0,100,0,8),Visible=false,ZIndex=60,ClipsDescendants=false},
+        {Rad(8),Str(C.Bdr,1)})
+    Pad(4,4,0,0).Parent=list
+    Lst(0).Parent=list
+
+    local optLabels = {}
+    for _, opt in ipairs(options) do
+        local row = N("TextButton",{Parent=list,BackgroundTransparency=1,
+            BackgroundColor3=C.Pnl,Size=UDim2.new(1,0,0,itemH),Text="",ZIndex=60},{Rad(4)})
+        local lbl = N("TextLabel",{Parent=row,BackgroundTransparency=1,
+            Position=UDim2.new(0,10,0,0),Size=UDim2.new(1,-10,1,0),
+            Text=opt,TextColor3=(opt==(default or options[1])) and C.AHi or C.T1,
+            TextSize=12,FontFace=F.Md,TextXAlignment=Enum.TextXAlignment.Left,ZIndex=60})
+        optLabels[opt] = lbl
+        row.MouseEnter:Connect(function()
+            TS:Create(row,TweenInfo.new(0.1),{BackgroundColor3=C.SbH,BackgroundTransparency=0}):Play()
+        end)
+        row.MouseLeave:Connect(function()
+            TS:Create(row,TweenInfo.new(0.1),{BackgroundTransparency=1}):Play()
+        end)
+        row.MouseButton1Click:Connect(function()
+            for o, l in next, optLabels do l.TextColor3 = o==opt and C.AHi or C.T1 end
+            sel.Text = opt
+            list.Visible = false
+            TS:Create(arrow,TweenInfo.new(0.15),{Rotation=0}):Play()
+            if callback then callback(opt) end
+        end)
+    end
+
+    local open = false
+    N("TextButton",{Parent=dd,BackgroundTransparency=1,Size=UDim2.new(1,0,1,0),Text="",ZIndex=5})
         .MouseButton1Click:Connect(function()
-            local cur,idx=sel.Text,1
-            for j,v in ipairs(options) do if v==cur then idx=j;break end end
-            idx=(idx%#options)+1; sel.Text=options[idx]
-            if callback then callback(options[idx]) end
+            open = not open
+            if open then
+                local ap = dd.AbsolutePosition
+                local wp = win.AbsolutePosition
+                local aw = dd.AbsoluteSize.X
+                list.Position = UDim2.new(0, ap.X-wp.X, 0, ap.Y-wp.Y+32)
+                list.Size     = UDim2.new(0, aw, 0, #options*itemH+8)
+            end
+            list.Visible = open
+            TS:Create(arrow,TweenInfo.new(0.15),{Rotation=open and 180 or 0}):Play()
         end)
     return f
 end
