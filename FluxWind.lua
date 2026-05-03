@@ -119,14 +119,45 @@ function Lib.new()
         gui.Parent = game:GetService("CoreGui")
     end
 
+    -- Drag container (holds glow layer + window)
+    local container = New("Frame", {
+        Parent = gui, Name = "Container",
+        BackgroundTransparency = 1,
+        Position = UDim2.new(0.5, -494, 0.5, -334),
+        Size = UDim2.new(0, 988, 0, 668),
+    })
+    self.Container = container
+
+    -- Neon glow layer (sits behind window)
+    local glowFrame = New("Frame", {
+        Parent = container, BackgroundColor3 = T.Accent,
+        BackgroundTransparency = 0.62,
+        Size = UDim2.new(1, 0, 1, 0),
+    }, {Rad(14)})
+
     local win = New("Frame", {
-        Parent = gui, Name = "Window",
+        Parent = container, Name = "Window",
         BackgroundColor3 = T.BG,
-        Position = UDim2.new(0.5, -490, 0.5, -330),
-        Size     = UDim2.new(0, 980, 0, 660),
+        Position = UDim2.new(0, 4, 0, 4),
+        Size = UDim2.new(0, 980, 0, 660),
         ClipsDescendants = true,
-    }, {Rad(12), Brd(T.Border, 1)})
+    }, {Rad(12)})
     self.Window = win
+
+    -- Animated neon border
+    local winStroke = New("UIStroke", {
+        Parent = win, Thickness = 1.5,
+        Color = T.Accent,
+        ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
+    })
+    RunService.Heartbeat:Connect(function()
+        local s = (math.sin(tick() * 2.2) + 1) * 0.5
+        local col = Color3.fromRGB(100, 52, 168):Lerp(Color3.fromRGB(192, 108, 255), s)
+        winStroke.Color = col
+        winStroke.Thickness = 1.2 + s * 1.6
+        glowFrame.BackgroundColor3 = col
+        glowFrame.BackgroundTransparency = 0.60 + s * 0.22
+    end)
 
     -- ---- TopBar ------------------------------------------------
     local topbar = New("Frame", {
@@ -167,16 +198,16 @@ function Lib.new()
     end
 
     WinCtrl(T.WinBtn, "—", 1).MouseButton1Click:Connect(function()
-        win.Visible = not win.Visible
+        container.Visible = not container.Visible
     end)
     WinCtrl(T.WinBtn, "⛶", 2)
     WinCtrl(T.Close,  "✕", 3).MouseButton1Click:Connect(function() gui:Destroy() end)
 
     -- Drag
-    local dragOn, dragStart, winStart = false, nil, nil
+    local dragOn, dragStart, conStart = false, nil, nil
     topbar.InputBegan:Connect(function(i)
         if i.UserInputType == Enum.UserInputType.MouseButton1 then
-            dragOn = true; dragStart = i.Position; winStart = win.Position
+            dragOn = true; dragStart = i.Position; conStart = container.Position
         end
     end)
     topbar.InputEnded:Connect(function(i)
@@ -185,8 +216,8 @@ function Lib.new()
     UserInputService.InputChanged:Connect(function(i)
         if dragOn and i.UserInputType == Enum.UserInputType.MouseMovement then
             local d = i.Position - dragStart
-            win.Position = UDim2.new(winStart.X.Scale, winStart.X.Offset + d.X,
-                                     winStart.Y.Scale, winStart.Y.Offset + d.Y)
+            container.Position = UDim2.new(conStart.X.Scale, conStart.X.Offset + d.X,
+                                           conStart.Y.Scale, conStart.Y.Offset + d.Y)
         end
     end)
 
@@ -418,35 +449,30 @@ function Lib:AddSection(parent, title)
     -- Header
     local hdrBg = New("Frame", {
         Parent = card, BackgroundColor3 = T.Section,
-        Size = UDim2.new(1, 0, 0, 38),
+        Size = UDim2.new(1, 0, 0, 34),
     })
     Rad(10).Parent = hdrBg
-    -- Flatten bottom corners of header
     New("Frame", {
         Parent = hdrBg, BackgroundColor3 = T.Section,
         Position = UDim2.new(0, 0, 0.5, 0), Size = UDim2.new(1, 0, 0.5, 0),
     })
+    -- Left accent bar
+    New("Frame", {
+        Parent = hdrBg, BackgroundColor3 = T.Accent,
+        Position = UDim2.new(0, 0, 0.18, 0), Size = UDim2.new(0, 3, 0.64, 0),
+    }, {Rad(2)})
     New("TextLabel", {
         Parent = hdrBg, BackgroundTransparency = 1,
-        Position = UDim2.new(0, 14, 0, 0), Size = UDim2.new(1, -60, 1, 0),
-        Text = title, TextColor3 = T.TextPri, TextSize = 14,
+        Position = UDim2.new(0, 14, 0, 0), Size = UDim2.new(1, -20, 1, 0),
+        Text = title, TextColor3 = T.TextPri, TextSize = 13,
         FontFace = F.Semi, TextXAlignment = Enum.TextXAlignment.Left,
     })
-    -- Section toggle (ON by default, decorative)
-    local tBg = New("Frame", {
-        Parent = hdrBg, BackgroundColor3 = T.TglOn,
-        Position = UDim2.new(1, -52, 0.5, -11), Size = UDim2.new(0, 42, 0, 22),
-    }, {Rad(11)})
-    New("Frame", {
-        Parent = tBg, BackgroundColor3 = T.TglKnob,
-        Position = UDim2.new(1, -21, 0.5, -8), Size = UDim2.new(0, 17, 0, 17),
-    }, {Rad(9)})
 
     -- Body
     local body = New("Frame", {
         Parent = card, BackgroundTransparency = 1,
-        Position = UDim2.new(0, 14, 0, 46),
-        Size = UDim2.new(1, -28, 0, 0), AutomaticSize = Enum.AutomaticSize.Y,
+        Position = UDim2.new(0, 12, 0, 42),
+        Size = UDim2.new(1, -24, 0, 0), AutomaticSize = Enum.AutomaticSize.Y,
     })
     List(8).Parent = body
     New("Frame", {Parent = card, BackgroundTransparency = 1, Size = UDim2.new(1, 0, 0, 10), LayoutOrder = 999})
