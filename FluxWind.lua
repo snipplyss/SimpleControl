@@ -101,7 +101,7 @@ function Lib.new()
     end)
 
     -- Top bar
-    local top = N("Frame",{Parent=win,BackgroundColor3=C.Top,Size=UDim2.new(1,0,0,52)},{Str(C.Bdr,1)})
+    local top = N("Frame",{Parent=win,BackgroundColor3=C.Top,Size=UDim2.new(1,0,0,52)})
 
     -- Logo row: [star icon] SNIPPLYSS [star icon]
     local logoRow = N("Frame",{Parent=top,BackgroundTransparency=1,
@@ -222,7 +222,7 @@ function Lib.new()
         task.delay(0.14, function() gui:Destroy() end)
     end)
 
-    -- Drag
+    -- Drag (main window via topbar)
     local dOn, dSt, cSt = false, nil, nil
     top.InputBegan:Connect(function(i)
         if i.UserInputType == Enum.UserInputType.MouseButton1 then dOn=true; dSt=i.Position; cSt=ctn.Position end
@@ -230,10 +230,24 @@ function Lib.new()
     top.InputEnded:Connect(function(i)
         if i.UserInputType == Enum.UserInputType.MouseButton1 then dOn=false end
     end)
+    -- Drag (mini widget — full surface except buttons)
+    local mDOn, mDSt, mDCst = false, nil, nil
+    miniWin.InputBegan:Connect(function(i)
+        if i.UserInputType == Enum.UserInputType.MouseButton1 then mDOn=true; mDSt=i.Position; mDCst=ctn.Position end
+    end)
+    miniWin.InputEnded:Connect(function(i)
+        if i.UserInputType == Enum.UserInputType.MouseButton1 then mDOn=false end
+    end)
+    expandBtn.InputBegan:Connect(function() mDOn=false end)
+    mClose.InputBegan:Connect(function() mDOn=false end)
     UIS.InputChanged:Connect(function(i)
-        if dOn and i.UserInputType == Enum.UserInputType.MouseMovement then
+        if i.UserInputType ~= Enum.UserInputType.MouseMovement then return end
+        if dOn then
             local d = i.Position - dSt
             ctn.Position = UDim2.new(cSt.X.Scale,cSt.X.Offset+d.X,cSt.Y.Scale,cSt.Y.Offset+d.Y)
+        elseif mDOn then
+            local d = i.Position - mDSt
+            ctn.Position = UDim2.new(mDCst.X.Scale,mDCst.X.Offset+d.X,mDCst.Y.Scale,mDCst.Y.Offset+d.Y)
         end
     end)
 
@@ -242,7 +256,7 @@ function Lib.new()
         Position=UDim2.new(0,0,0,52),Size=UDim2.new(1,0,1,-88)})
 
     -- Sidebar
-    local sb = N("Frame",{Parent=content,BackgroundColor3=C.Side,Size=UDim2.new(0,188,1,0)},{Str(C.Bdr,1)})
+    local sb = N("Frame",{Parent=content,BackgroundColor3=C.Side,Size=UDim2.new(0,188,1,0)})
     local nav = N("Frame",{Parent=sb,BackgroundTransparency=1,
         Position=UDim2.new(0,0,0,12),Size=UDim2.new(1,0,1,-108)})
     Lst(3).Parent=nav; Pad(0,0,10,10).Parent=nav
@@ -278,7 +292,7 @@ function Lib.new()
         local tf = N("Frame",{Parent=tabCon,BackgroundTransparency=1,
             Size=UDim2.new(1,0,1,0),Visible=false,Name=def.n})
 
-        local hdr = N("Frame",{Parent=tf,BackgroundColor3=C.Pnl,Size=UDim2.new(1,0,0,58)},{Str(C.Bdr,1)})
+        local hdr = N("Frame",{Parent=tf,BackgroundColor3=C.Pnl,Size=UDim2.new(1,0,0,58)})
         N("ImageLabel",{Parent=hdr,BackgroundTransparency=1,Image=def.ic,ImageColor3=C.Acc,
             Position=UDim2.new(0,18,0.5,-14),Size=UDim2.new(0,28,0,28)})
         N("TextLabel",{Parent=hdr,BackgroundTransparency=1,
@@ -320,13 +334,19 @@ function Lib.new()
         Position=UDim2.new(0,58,0,24),Size=UDim2.new(1,-68,0,16),
         Text=player.Name,TextColor3=C.T1,TextSize=12,FontFace=F.Sm,TextXAlignment=Enum.TextXAlignment.Left})
     local prem = N("Frame",{Parent=uc,BackgroundColor3=C.Prem,
-        Position=UDim2.new(0,58,0,46),Size=UDim2.new(0,72,0,18)},{Rad(5)})
-    N("TextLabel",{Parent=prem,BackgroundTransparency=1,Size=UDim2.new(1,0,1,0),
-        Text="👑 Premium",TextColor3=C.PTxt,TextSize=10,FontFace=F.Sm,TextXAlignment=Enum.TextXAlignment.Center})
+        Position=UDim2.new(0,58,0,46),Size=UDim2.new(0,80,0,18)},{Rad(5)})
+    local premRow = N("Frame",{Parent=prem,BackgroundTransparency=1,Size=UDim2.new(1,0,1,0)})
+    Lst(4,Enum.FillDirection.Horizontal,Enum.HorizontalAlignment.Center,Enum.VerticalAlignment.Center).Parent=premRow
+    N("ImageLabel",{Parent=premRow,BackgroundTransparency=1,
+        Image="rbxassetid://10709818626",ImageColor3=C.PTxt,
+        Size=UDim2.new(0,12,0,12),LayoutOrder=1})
+    N("TextLabel",{Parent=premRow,BackgroundTransparency=1,Size=UDim2.new(0,52,1,0),
+        Text="Premium",TextColor3=C.PTxt,TextSize=10,FontFace=F.Sm,
+        TextXAlignment=Enum.TextXAlignment.Left,LayoutOrder=2})
 
     -- Status bar
     local stat = N("Frame",{Parent=win,BackgroundColor3=C.Stat,
-        Position=UDim2.new(0,0,1,-36),Size=UDim2.new(1,0,0,36)},{Str(C.Bdr,1)})
+        Position=UDim2.new(0,0,1,-36),Size=UDim2.new(1,0,0,36)})
     Pad(0,0,16,16).Parent=stat
     Lst(20,Enum.FillDirection.Horizontal,Enum.HorizontalAlignment.Left,Enum.VerticalAlignment.Center).Parent=stat
 
@@ -521,9 +541,9 @@ function Lib:AddDropdown(parent, label, options, default, callback)
     local sel = N("TextLabel",{Parent=dd,BackgroundTransparency=1,
         Position=UDim2.new(0,10,0,0),Size=UDim2.new(1,-26,1,0),
         Text=default or options[1],TextColor3=C.T1,TextSize=12,FontFace=F.Md,TextXAlignment=Enum.TextXAlignment.Left})
-    N("TextLabel",{Parent=dd,BackgroundTransparency=1,
-        Position=UDim2.new(1,-20,0.5,-7),Size=UDim2.new(0,14,0,14),
-        Text="▾",TextColor3=C.T2,TextSize=12,FontFace=F.Rg})
+    N("ImageLabel",{Parent=dd,BackgroundTransparency=1,
+        Image="rbxassetid://10709767827",ImageColor3=C.T2,
+        Position=UDim2.new(1,-20,0.5,-7),Size=UDim2.new(0,14,0,14)})
     N("TextButton",{Parent=dd,BackgroundTransparency=1,Size=UDim2.new(1,0,1,0),Text=""})
         .MouseButton1Click:Connect(function()
             local cur,idx=sel.Text,1
