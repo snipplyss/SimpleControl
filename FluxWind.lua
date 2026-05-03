@@ -76,35 +76,44 @@ function Lib.new()
         Position=UDim2.new(0.5,-494,0.5,-334), Size=UDim2.new(0,988,0,668)})
     self.Container = ctn
 
-    -- Triple-layer pulsing neon glow
-    local gA = N("Frame",{Parent=ctn,BackgroundColor3=C.Acc,BackgroundTransparency=0.72,Size=UDim2.new(1,0,1,0)},{Rad(15)})
-    local gB = N("Frame",{Parent=ctn,BackgroundColor3=C.Acc,BackgroundTransparency=0.83,Size=UDim2.new(1,14,1,14),Position=UDim2.new(0,-7,0,-7)},{Rad(18)})
-    local gC = N("Frame",{Parent=ctn,BackgroundColor3=C.Acc,BackgroundTransparency=0.91,Size=UDim2.new(1,28,1,28),Position=UDim2.new(0,-14,0,-14)},{Rad(21)})
+    -- Outer soft glow halos (behind window, never clipped)
+    local gOut = N("Frame",{Parent=ctn,BackgroundColor3=C.Acc,BackgroundTransparency=0.82,
+        Position=UDim2.new(0,-10,0,-10),Size=UDim2.new(1,20,1,20)},{Rad(22)})
+    local gMid = N("Frame",{Parent=ctn,BackgroundColor3=C.Acc,BackgroundTransparency=0.70,
+        Position=UDim2.new(0,-4,0,-4),Size=UDim2.new(1,8,1,8)},{Rad(16)})
+    -- Dedicated border frame (transparent bg, NOT inside win so never clipped)
+    local bFrm = N("Frame",{Parent=ctn,BackgroundTransparency=1,Size=UDim2.new(1,0,1,0)},{Rad(14)})
+    local wStroke = N("UIStroke",{Parent=bFrm,Color=C.Acc,Thickness=2,
+        ApplyStrokeMode=Enum.ApplyStrokeMode.Border})
 
     -- Window
     local win = N("Frame",{Parent=ctn,Name="Window",BackgroundColor3=C.BG,
         Position=UDim2.new(0,4,0,4),Size=UDim2.new(0,980,0,660),ClipsDescendants=true},{Rad(12)})
     self.Window = win
-    local wStroke = Str(C.Acc, 1.5); wStroke.Parent = win
 
-    -- Animated glow + border
+    -- Pulsing neon border + glow (direct property set every frame = real animation)
     RS.Heartbeat:Connect(function()
-        local s = (math.sin(tick() * 2.2) + 1) * 0.5
+        local s = (math.sin(tick() * 2.4) + 1) * 0.5
         local col = C.ALo:Lerp(C.AHi, s)
-        gA.BackgroundColor3=col; gA.BackgroundTransparency = 0.68 + s * 0.14
-        gB.BackgroundColor3=col; gB.BackgroundTransparency = 0.80 + s * 0.10
-        gC.BackgroundColor3=col; gC.BackgroundTransparency = 0.89 + s * 0.08
-        wStroke.Color=col;       wStroke.Thickness = 1.0 + s * 1.8
+        gOut.BackgroundColor3=col; gOut.BackgroundTransparency = 0.78 + s * 0.16
+        gMid.BackgroundColor3=col; gMid.BackgroundTransparency = 0.60 + s * 0.20
+        wStroke.Color=col;         wStroke.Thickness = 1.5 + s * 2.5
     end)
 
     -- Top bar
     local top = N("Frame",{Parent=win,BackgroundColor3=C.Top,Size=UDim2.new(1,0,0,52)},{Str(C.Bdr,1)})
 
-    -- Logo — uppercase + ExtraBold ≈ Orbitron feel, animated gradient
-    local titleLbl = N("TextLabel",{Parent=top,BackgroundTransparency=1,
-        Position=UDim2.new(0.5,-180,0,0),Size=UDim2.new(0,360,1,0),
-        Text="✦  SNIPPLYSS  ✦",TextColor3=C.AHi,TextSize=26,
-        FontFace=F.Logo,TextXAlignment=Enum.TextXAlignment.Center})
+    -- Logo row: [star icon] SNIPPLYSS [star icon]
+    local logoRow = N("Frame",{Parent=top,BackgroundTransparency=1,
+        Position=UDim2.new(0.5,-175,0,0),Size=UDim2.new(0,350,1,0)})
+    Lst(6,Enum.FillDirection.Horizontal,Enum.HorizontalAlignment.Center,Enum.VerticalAlignment.Center).Parent=logoRow
+    local starL = N("ImageLabel",{Parent=logoRow,BackgroundTransparency=1,
+        Size=UDim2.new(0,22,0,22),Image="rbxassetid://10734966248",ImageColor3=C.AHi,LayoutOrder=1})
+    local titleLbl = N("TextLabel",{Parent=logoRow,BackgroundTransparency=1,
+        Size=UDim2.new(0,280,1,0),Text="SNIPPLYSS",TextColor3=C.AHi,TextSize=26,
+        FontFace=F.Logo,TextXAlignment=Enum.TextXAlignment.Center,LayoutOrder=2})
+    local starR = N("ImageLabel",{Parent=logoRow,BackgroundTransparency=1,
+        Size=UDim2.new(0,22,0,22),Image="rbxassetid://10734966248",ImageColor3=C.AHi,LayoutOrder=3})
     local grad = N("UIGradient",{Parent=titleLbl,
         Color=ColorSequence.new{
             ColorSequenceKeypoint.new(0,   Color3.fromRGB(162, 72,248)),
@@ -112,25 +121,42 @@ function Lib.new()
             ColorSequenceKeypoint.new(1,   Color3.fromRGB(152, 62,215)),
         }, Rotation=35})
     RS.Heartbeat:Connect(function()
-        grad.Rotation = 35 + math.sin(tick() * 0.9) * 22
+        local s2 = (math.sin(tick() * 0.9) + 1) * 0.5
+        grad.Rotation = 35 + s2 * 44
+        local sc = Color3.fromRGB(162,72,248):Lerp(Color3.fromRGB(218,145,255), s2)
+        starL.ImageColor3 = sc; starR.ImageColor3 = sc
     end)
 
-    -- Window controls
+    -- Window controls (ImageButtons with real icons)
     local cRow = N("Frame",{Parent=top,BackgroundTransparency=1,
-        Position=UDim2.new(1,-98,0.5,-10),Size=UDim2.new(0,88,0,20)})
-    Lst(5,Enum.FillDirection.Horizontal,Enum.HorizontalAlignment.Right,Enum.VerticalAlignment.Center).Parent = cRow
+        Position=UDim2.new(1,-112,0.5,-11),Size=UDim2.new(0,102,0,22)})
+    Lst(5,Enum.FillDirection.Horizontal,Enum.HorizontalAlignment.Right,Enum.VerticalAlignment.Center).Parent=cRow
 
-    local function WBtn(col, sym, lo)
-        local b = N("TextButton",{Parent=cRow,BackgroundColor3=col,
-            Size=UDim2.new(0,20,0,20),Text=sym,TextColor3=Color3.new(1,1,1),
-            TextSize=9,FontFace=F.Bd,LayoutOrder=lo},{Rad(6)})
-        b.MouseEnter:Connect(function() TS:Create(b,TweenInfo.new(0.1),{BackgroundColor3=col:Lerp(Color3.new(1,1,1),.2)}):Play() end)
+    local function IBtn(col, img, lo)
+        local b = N("ImageButton",{Parent=cRow,BackgroundColor3=col,
+            Image=img,ImageColor3=Color3.new(1,1,1),
+            Size=UDim2.new(0,22,0,22),LayoutOrder=lo},{Rad(6)})
+        Pad(4,4,4,4).Parent=b
+        b.MouseEnter:Connect(function() TS:Create(b,TweenInfo.new(0.1),{BackgroundColor3=col:Lerp(Color3.new(1,1,1),.22)}):Play() end)
         b.MouseLeave:Connect(function() TS:Create(b,TweenInfo.new(0.1),{BackgroundColor3=col}):Play() end)
         return b
     end
-    WBtn(C.WB,"—",1).MouseButton1Click:Connect(function() ctn.Visible = not ctn.Visible end)
-    WBtn(C.WB,"⛶",2)
-    WBtn(C.Cls,"✕",3).MouseButton1Click:Connect(function() gui:Destroy() end)
+
+    -- Minimize: tween height down to topbar only
+    local minimized = false
+    local TI_Q = TweenInfo.new(0.25, Enum.EasingStyle.Quart, Enum.EasingDirection.Out)
+    IBtn(C.WB,"rbxassetid://7072706620",1).MouseButton1Click:Connect(function()
+        minimized = not minimized
+        local ch = minimized and 60 or 668
+        local wh = minimized and 52 or 660
+        TS:Create(ctn, TI_Q, {Size=UDim2.new(0,988,0,ch)}):Play()
+        TS:Create(win, TI_Q, {Size=UDim2.new(0,980,0,wh)}):Play()
+    end)
+    IBtn(C.WB,"rbxassetid://10734943193",2)
+    IBtn(C.Cls,"rbxassetid://10747384394",3).MouseButton1Click:Connect(function()
+        TS:Create(ctn,TweenInfo.new(0.16,Enum.EasingStyle.Quart),{Size=UDim2.new(0,988*0.93,0,668*0.93)}):Play()
+        task.delay(0.15, function() gui:Destroy() end)
+    end)
 
     -- Drag
     local dOn, dSt, cSt = false, nil, nil
@@ -261,6 +287,28 @@ function Lib.new()
             self.FPSLbl.Text = tostring(fc)
             self.FPSLbl.TextColor3 = fc>=50 and C.Grn or fc>=30 and C.Org or C.Rd
             fc, ft = 0, 0
+        end
+    end)
+
+    -- RightShift: toggle visibility with scale-bounce animation
+    local _open = true
+    UIS.InputBegan:Connect(function(i, gp)
+        if gp then return end
+        if i.KeyCode == Enum.KeyCode.RightShift then
+            _open = not _open
+            if _open then
+                ctn.Visible = true
+                ctn.Size = UDim2.new(0, 988*0.90, 0, 668*0.90)
+                TS:Create(ctn, TweenInfo.new(0.24, Enum.EasingStyle.Back, Enum.EasingDirection.Out),
+                    {Size=UDim2.new(0,988,0,668)}):Play()
+            else
+                TS:Create(ctn, TweenInfo.new(0.18, Enum.EasingStyle.Quart, Enum.EasingDirection.In),
+                    {Size=UDim2.new(0,988*0.90,0,668*0.90)}):Play()
+                task.delay(0.17, function()
+                    ctn.Visible = false
+                    ctn.Size = UDim2.new(0,988,0,668)
+                end)
+            end
         end
     end)
 
