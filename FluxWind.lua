@@ -543,10 +543,11 @@ function Lib:AddDropdown(parent, label, options, default, callback)
         Image="rbxassetid://10709767827",ImageColor3=C.T2,
         Position=UDim2.new(1,-20,0.5,-7),Size=UDim2.new(0,14,0,14)})
 
-    -- List parented to win to escape ScrollingFrame clipping
+    -- List parented to ctn (no ClipsDescendants, so never gets cut off by scroll)
     local win = self.Window
+    local ctn = self.Container
     local itemH = 26
-    local list = N("Frame",{Parent=win,BackgroundColor3=C.Pnl,
+    local list = N("Frame",{Parent=ctn,BackgroundColor3=C.Pnl,
         Size=UDim2.new(0,100,0,8),Visible=false,ZIndex=60,ClipsDescendants=false},
         {Rad(8),Str(C.Bdr,1)})
     Pad(4,4,0,0).Parent=list
@@ -580,8 +581,8 @@ function Lib:AddDropdown(parent, label, options, default, callback)
     local trackConn = nil
     local function updatePos()
         local ap = dd.AbsolutePosition
-        local wp = win.AbsolutePosition
-        list.Position = UDim2.new(0, ap.X-wp.X, 0, ap.Y-wp.Y+32)
+        local cp = ctn.AbsolutePosition
+        list.Position = UDim2.new(0, ap.X-cp.X, 0, ap.Y-cp.Y+32)
     end
     N("TextButton",{Parent=dd,BackgroundTransparency=1,Size=UDim2.new(1,0,1,0),Text="",ZIndex=5})
         .MouseButton1Click:Connect(function()
