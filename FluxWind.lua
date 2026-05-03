@@ -143,26 +143,62 @@ function Lib.new()
     end
 
     -- Size constants
-    local NRM_CTN = UDim2.new(0,988,0,668)
-    local NRM_WIN = UDim2.new(0,980,0,660)
-    local MINI_CTN = UDim2.new(0,988,0,60)
-    local MINI_WIN = UDim2.new(0,980,0,52)
-    local TI_Q = TweenInfo.new(0.22,Enum.EasingStyle.Quart,Enum.EasingDirection.Out)
-    local TI_B = TweenInfo.new(0.28,Enum.EasingStyle.Back, Enum.EasingDirection.Out)
+    local NRM_CTN  = UDim2.new(0,988,0,668)
+    local NRM_WIN  = UDim2.new(0,980,0,660)
+    local MINI_CTN = UDim2.new(0,288,0,60)
+    local TI_Q     = TweenInfo.new(0.22,Enum.EasingStyle.Quart,Enum.EasingDirection.Out)
+    local TI_B     = TweenInfo.new(0.28,Enum.EasingStyle.Back, Enum.EasingDirection.Out)
     local minimized  = false
     local fullscreen = false
 
-    -- Minimize: collapse to topbar only
+    -- Mini widget: small card shown when minimized (replaces ugly topbar collapse)
+    local miniWin = N("Frame",{Parent=ctn,Name="MiniWindow",BackgroundColor3=C.Top,
+        Position=UDim2.new(0,4,0,4),Size=UDim2.new(0,280,0,52),
+        Visible=false},{Rad(12),Str(C.Bdr,1)})
+    N("ImageLabel",{Parent=miniWin,BackgroundTransparency=1,
+        Image="rbxassetid://10734966248",ImageColor3=C.AHi,
+        Position=UDim2.new(0,12,0.5,-8),Size=UDim2.new(0,16,0,16)})
+    local mTitle = N("TextLabel",{Parent=miniWin,BackgroundTransparency=1,
+        Position=UDim2.new(0,34,0,0),Size=UDim2.new(1,-80,1,0),
+        Text="SnipplyssHub",TextColor3=C.AHi,TextSize=14,
+        FontFace=F.Logo,TextXAlignment=Enum.TextXAlignment.Left})
+    N("UIGradient",{Parent=mTitle,
+        Color=ColorSequence.new{
+            ColorSequenceKeypoint.new(0,  Color3.fromRGB(162,72,248)),
+            ColorSequenceKeypoint.new(0.5,Color3.fromRGB(218,145,255)),
+            ColorSequenceKeypoint.new(1,  Color3.fromRGB(152,62,215)),
+        },Rotation=35})
+    local expandBtn = N("ImageButton",{Parent=miniWin,BackgroundColor3=C.WB,
+        Image="rbxassetid://10734943193",ImageColor3=Color3.new(1,1,1),
+        Position=UDim2.new(1,-52,0.5,-11),Size=UDim2.new(0,22,0,22)},{Rad(6)})
+    Pad(4,4,4,4).Parent=expandBtn
+    local mClose = N("ImageButton",{Parent=miniWin,BackgroundColor3=C.Cls,
+        Image="rbxassetid://10747384394",ImageColor3=Color3.new(1,1,1),
+        Position=UDim2.new(1,-26,0.5,-11),Size=UDim2.new(0,22,0,22)},{Rad(6)})
+    Pad(4,4,4,4).Parent=mClose
+
+    -- Minimize: hide main window, show mini card
     IBtn(C.WB,"rbxassetid://7072706620",1).MouseButton1Click:Connect(function()
         if fullscreen then return end
-        minimized = not minimized
-        if minimized then
-            TS:Create(ctn, TI_Q, {Size=MINI_CTN}):Play()
-            TS:Create(win, TI_Q, {Size=MINI_WIN}):Play()
-        else
-            TS:Create(ctn, TI_Q, {Size=NRM_CTN}):Play()
-            TS:Create(win, TI_Q, {Size=NRM_WIN}):Play()
-        end
+        minimized = true
+        win.Visible = false
+        miniWin.Visible = true
+        TS:Create(ctn, TI_Q, {Size=MINI_CTN}):Play()
+    end)
+
+    -- Expand from mini card → back to full window
+    expandBtn.MouseButton1Click:Connect(function()
+        minimized = false
+        miniWin.Visible = false
+        win.Visible = true
+        TS:Create(ctn, TI_B, {Size=NRM_CTN}):Play()
+    end)
+
+    -- Close from mini card
+    mClose.MouseButton1Click:Connect(function()
+        TS:Create(ctn, TweenInfo.new(0.16,Enum.EasingStyle.Quart,Enum.EasingDirection.In),
+            {Size=UDim2.new(0,MINI_CTN.X.Offset*0.88,0,MINI_CTN.Y.Offset*0.88)}):Play()
+        task.delay(0.14, function() gui:Destroy() end)
     end)
 
     -- Fullscreen: fill viewport
@@ -182,7 +218,7 @@ function Lib.new()
     -- Close: shrink + destroy
     IBtn(C.Cls,"rbxassetid://10747384394",3).MouseButton1Click:Connect(function()
         TS:Create(ctn, TweenInfo.new(0.16,Enum.EasingStyle.Quart,Enum.EasingDirection.In),
-            {Size=UDim2.new(0,988*0.88,0,668*0.88)}):Play()
+            {Size=UDim2.new(0,NRM_CTN.X.Offset*0.88,0,NRM_CTN.Y.Offset*0.88)}):Play()
         task.delay(0.14, function() gui:Destroy() end)
     end)
 
@@ -298,30 +334,45 @@ function Lib.new()
         return N("TextLabel",{Parent=f,BackgroundTransparency=1,Position=UDim2.new(0.46,0,0,0),Size=UDim2.new(0.54,0,1,0),
             Text=val,TextColor3=col or C.T2,TextSize=11,FontFace=F.Sm,TextXAlignment=Enum.TextXAlignment.Left})
     end
-    SI("Status","Attached",C.Grn,1)
-    self.PlaceLbl  = SI("Place",  game.Name ~= "" and game.Name or "Unknown", C.T2, 2)
+    local pingLbl  = SI("Ping",   "---ms",   C.T2,  1)
+    self.PlaceLbl  = SI("Place",  game.Name ~= "" and game.Name or tostring(game.PlaceId), C.T2, 2)
     self.UptimeLbl = SI("Uptime", "00:00:00", C.T2, 3)
     self.FPSLbl    = SI("FPS",    "60",       C.Grn, 4)
+
+    -- Fetch actual game name async (game.Name can be wrong in executor)
+    task.spawn(function()
+        local ok, info = pcall(function()
+            return game:GetService("MarketplaceService"):GetProductInfo(game.PlaceId)
+        end)
+        if ok and info and info.Name then self.PlaceLbl.Text = info.Name end
+    end)
 
     local t0 = tick()
     RS.Heartbeat:Connect(function()
         local e = math.floor(tick()-t0)
         self.UptimeLbl.Text = string.format("%02d:%02d:%02d", e//3600, (e%3600)//60, e%60)
     end)
-    local fc, ft = 0, 0
+    local fc, ft, pingT = 0, 0, 0
     RS.Heartbeat:Connect(function(dt)
-        fc+=1; ft+=dt
+        fc+=1; ft+=dt; pingT+=dt
         if ft >= 1 then
             self.FPSLbl.Text = tostring(fc)
             self.FPSLbl.TextColor3 = fc>=50 and C.Grn or fc>=30 and C.Org or C.Rd
             fc, ft = 0, 0
         end
+        if pingT >= 2 then
+            pingT = 0
+            local ok, ms = pcall(function() return math.floor(player:GetNetworkPing()*1000) end)
+            if ok then
+                pingLbl.Text = ms.."ms"
+                pingLbl.TextColor3 = ms<100 and C.Grn or ms<200 and C.Org or C.Rd
+            end
+        end
     end)
 
-    -- RightShift: hide/show with bounce, respects minimized state
+    -- RightShift: hide/show (no gameProcessed filter — executor compat)
     local _open = true
-    UIS.InputBegan:Connect(function(i, gp)
-        if gp then return end
+    UIS.InputBegan:Connect(function(i)
         if i.KeyCode ~= Enum.KeyCode.RightShift then return end
         _open = not _open
         if _open then
@@ -330,9 +381,9 @@ function Lib.new()
             ctn.Visible = true
             TS:Create(ctn, TI_B, {Size=tSz}):Play()
         else
-            local tSz = ctn.Size
+            local sz = ctn.Size
             TS:Create(ctn, TweenInfo.new(0.16,Enum.EasingStyle.Quart,Enum.EasingDirection.In),
-                {Size=UDim2.new(0,tSz.X.Offset*0.88,0,tSz.Y.Offset*0.88)}):Play()
+                {Size=UDim2.new(0,sz.X.Offset*0.88,0,sz.Y.Offset*0.88)}):Play()
             task.delay(0.15, function()
                 ctn.Visible = false
                 ctn.Size = minimized and MINI_CTN or NRM_CTN
