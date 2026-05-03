@@ -577,19 +577,37 @@ function Lib:AddDropdown(parent, label, options, default, callback)
     end
 
     local open = false
+    local trackConn = nil
+    local function updatePos()
+        local ap = dd.AbsolutePosition
+        local wp = win.AbsolutePosition
+        list.Position = UDim2.new(0, ap.X-wp.X, 0, ap.Y-wp.Y+32)
+    end
     N("TextButton",{Parent=dd,BackgroundTransparency=1,Size=UDim2.new(1,0,1,0),Text="",ZIndex=5})
         .MouseButton1Click:Connect(function()
             open = not open
             if open then
-                local ap = dd.AbsolutePosition
-                local wp = win.AbsolutePosition
                 local aw = dd.AbsoluteSize.X
-                list.Position = UDim2.new(0, ap.X-wp.X, 0, ap.Y-wp.Y+32)
-                list.Size     = UDim2.new(0, aw, 0, #options*itemH+8)
+                list.Size = UDim2.new(0, aw, 0, #options*itemH+8)
+                updatePos()
+                if trackConn then trackConn:Disconnect() end
+                trackConn = RS.Heartbeat:Connect(updatePos)
+            else
+                if trackConn then trackConn:Disconnect(); trackConn=nil end
             end
             list.Visible = open
             TS:Create(arrow,TweenInfo.new(0.15),{Rotation=open and 180 or 0}):Play()
         end)
+    -- also close+stop tracking when an option is picked (inside row.MouseButton1Click above)
+    -- patch each row to disconnect tracker
+    for _, ch in ipairs(list:GetChildren()) do
+        if ch:IsA("TextButton") then
+            ch.MouseButton1Click:Connect(function()
+                open = false
+                if trackConn then trackConn:Disconnect(); trackConn=nil end
+            end)
+        end
+    end
     return f
 end
 
